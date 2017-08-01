@@ -2,15 +2,25 @@
 
 open Types
 open System
+open FSharp.Data
 
 let tryPromoteToVip purchases =
     let customer, amount = purchases
     if amount > 100M then { customer with IsVip = true }
     else customer
 
+
+type PurchaseData = JsonProvider<"Data.json">
+
 let getPurchases customer =
-    if customer.Id % 2 = 0 then (customer, 120M)
-    else (customer, 80M)
+    let purchases = PurchaseData.Load("Data.json")
+    let avgPurchases = purchases
+                       |> Seq.filter(fun p -> p.CustomerId = customer.Id)
+                       |> Seq.collect( fun p -> p.PurchasesByMonth )
+                       |> Seq.average
+
+    (customer, avgPurchases)
+
 
 let increaseCredit condition customer =
     if condition customer then { customer with Credit = customer.Credit + 100M<USD> }
@@ -40,3 +50,13 @@ let getCustomer id =
     ]
     customers
     |> List.find (fun c -> c.Id = id)
+
+
+
+//    Go to the Module4/Application, open Functions.fs and change the “getPurchases” function so that:
+// Uses the JsonProvider with the Data.json file (both as schema and data)
+// Filters the customer by its id
+// Collects the PurchasesByMonth field
+// Calculates the purchases’ average
+// Returns a tuple with the customer and the purchases’ average
+
